@@ -558,7 +558,7 @@ const webDirectory = "web"
 		}
 
 		t.Run(tt.name, func(t *testing.T) {
-			got, hasChange, err := Execute(tt.args.projectName, tt.args.filePath, OptionRemoveUnusedImports)
+			got, hasChange, err := Execute(tt.args.projectName, tt.args.filePath, WithRemoveUnusedImports(true))
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Execute() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -659,7 +659,82 @@ func main() {
 		}
 
 		t.Run(tt.name, func(t *testing.T) {
-			got, hasChange, err := Execute(tt.args.projectName, tt.args.filePath, OptionUseAliasForVersionSuffix)
+			got, hasChange, err := Execute(tt.args.projectName, tt.args.filePath, WithAliasForVersionSuffix(true))
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Execute() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			assert.Equal(t, tt.wantChange, hasChange)
+			assert.Equal(t, tt.want, string(got))
+		})
+	}
+}
+
+func TestExtraGroupImportsOrdering(t *testing.T) {
+	type args struct {
+		projectName string
+		filePath    string
+		fileContent string
+	}
+	tests := []struct {
+		name       string
+		args       args
+		want       string
+		wantChange bool
+		wantErr    bool
+	}{
+		{
+			name: "success with set alias",
+			args: args{
+				projectName: "github.com/incu6us/goimports-reviser",
+				filePath:    "./testdata/example.go",
+				fileContent: `package main
+import(
+	"fmt"
+	"github.com/go-pg/pg/v9"
+	"strconv"
+	"github.com/incu6us/goimports-reviser/pkg"
+	"github.com/othergroup/an-import"
+	"github.com/othergroup/another-import"
+)
+
+func main(){
+	_ = strconv.Itoa(1)
+	fmt.Println(pg.In([]string{"test"}))
+}`,
+			},
+			want: `package main
+
+import (
+	"fmt"
+	"strconv"
+
+	"github.com/go-pg/pg/v9"
+
+	"github.com/othergroup/an-import"
+	"github.com/othergroup/another-import"
+
+	"github.com/incu6us/goimports-reviser/pkg"
+)
+
+func main() {
+	_ = strconv.Itoa(1)
+	fmt.Println(pg.In([]string{"test"}))
+}
+`,
+			wantChange: true,
+			wantErr:    false,
+		},
+	}
+
+	for _, tt := range tests {
+		if err := ioutil.WriteFile(tt.args.filePath, []byte(tt.args.fileContent), 0644); err != nil {
+			t.Errorf("write test file failed: %s", err)
+		}
+
+		t.Run(tt.name, func(t *testing.T) {
+			got, hasChange, err := Execute(tt.args.projectName, tt.args.filePath, WithExtraImportGroups([]string{"github.com/othergroup"}))
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Execute() error = %v, wantErr %v", err, tt.wantErr)
 				return

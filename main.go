@@ -19,6 +19,7 @@ const (
 	versionArg             = "version"
 	removeUnusedImportsArg = "rm-unused"
 	setAlias               = "set-alias"
+	extraGroupsArg         = "extra-groups"
 )
 
 // Project build specific vars
@@ -33,7 +34,7 @@ var (
 	shouldSetAlias            *bool
 )
 
-var projectName, filePath string
+var projectName, filePath, extraGroups string
 
 func init() {
 	flag.StringVar(
@@ -41,13 +42,6 @@ func init() {
 		projectNameArg,
 		"",
 		"Your project name(ex.: github.com/incu6us/goimports-reviser). Required parameter.",
-	)
-
-	flag.StringVar(
-		&filePath,
-		filePathArg,
-		"",
-		"File path to fix imports(ex.: ./reviser/reviser.go). Required parameter.",
 	)
 
 	shouldRemoveUnusedImports = flag.Bool(
@@ -62,6 +56,8 @@ func init() {
 		"Set alias for versioned package names, like 'github.com/go-pg/pg/v9'. "+
 			"In this case import will be set as 'pg \"github.com/go-pg/pg/v9\"'. Optional parameter.",
 	)
+
+	flag.StringVar(&extraGroups, extraGroupsArg, "", "Extra groupings to include, comma separated list.  Ordering is same as provided. Optional parameter.")
 
 	if Tag != "" {
 		shouldShowVersion = flag.Bool(
@@ -93,6 +89,14 @@ func printVersion() {
 
 func main() {
 	flag.Parse()
+	paths := flag.Args()
+	fmt.Println(paths)
+	f, err := os.Stat(paths[0])
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(f.IsDir())
 
 	if shouldShowVersion != nil && *shouldShowVersion {
 		printVersion()
@@ -105,13 +109,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	var options reviser.Options
+	options := []reviser.Option{}
 	if shouldRemoveUnusedImports != nil && *shouldRemoveUnusedImports {
-		options = append(options, reviser.OptionRemoveUnusedImports)
+		options = append(options, reviser.WithRemoveUnusedImports(true))
 	}
 
 	if shouldSetAlias != nil && *shouldSetAlias {
-		options = append(options, reviser.OptionUseAliasForVersionSuffix)
+		options = append(options, reviser.WithAliasForVersionSuffix(true))
+	}
+
+	if extraGroups != "" {
+		options = append(options, reviser.WithExtraImportGroups(cleanExtraGroups(extraGroups)))
 	}
 
 	formattedOutput, hasChange, err := reviser.Execute(projectName, filePath, options...)
@@ -144,4 +152,12 @@ func validateInputs(projectName, filePath string) error {
 	}
 
 	return nil
+}
+
+func cleanExtraGroups(extraGroupsString string) []string {
+	groups := strings.Split(extraGroupsString, ",")
+	for i, _ := range groups {
+		groups[i] = strings.TrimSpace(groups[i])
+	}
+	return groups
 }
