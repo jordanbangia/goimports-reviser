@@ -10,7 +10,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/incu6us/goimports-reviser/reviser"
+	"github.com/incu6us/goimports-reviser/v2/reviser"
 )
 
 const (
@@ -19,7 +19,7 @@ const (
 	versionArg             = "version"
 	removeUnusedImportsArg = "rm-unused"
 	setAlias               = "set-alias"
-	extraGroupsArg         = "extra-groups"
+	localPkgPrefixesArg    = "local"
 )
 
 // Project build specific vars
@@ -34,7 +34,7 @@ var (
 	shouldSetAlias            *bool
 )
 
-var projectName, filePath, extraGroups string
+var projectName, filePath, localPkgPrefixes string
 
 func init() {
 	flag.StringVar(
@@ -42,6 +42,20 @@ func init() {
 		projectNameArg,
 		"",
 		"Your project name(ex.: github.com/incu6us/goimports-reviser). Required parameter.",
+	)
+
+	flag.StringVar(
+		&filePath,
+		filePathArg,
+		"",
+		"File path to fix imports(ex.: ./reviser/reviser.go). Required parameter.",
+	)
+
+	flag.StringVar(
+		&localPkgPrefixes,
+		localPkgPrefixesArg,
+		"",
+		`Local package prefixes which will be placed after 3rd-party group(if defined). Values should be comma-separated. Optional parameters.`,
 	)
 
 	shouldRemoveUnusedImports = flag.Bool(
@@ -56,8 +70,6 @@ func init() {
 		"Set alias for versioned package names, like 'github.com/go-pg/pg/v9'. "+
 			"In this case import will be set as 'pg \"github.com/go-pg/pg/v9\"'. Optional parameter.",
 	)
-
-	flag.StringVar(&extraGroups, extraGroupsArg, "", "Extra groupings to include, comma separated list.  Ordering is same as provided. Optional parameter.")
 
 	if Tag != "" {
 		shouldShowVersion = flag.Bool(
@@ -118,11 +130,7 @@ func main() {
 		options = append(options, reviser.WithAliasForVersionSuffix(true))
 	}
 
-	if extraGroups != "" {
-		options = append(options, reviser.WithExtraImportGroups(cleanExtraGroups(extraGroups)))
-	}
-
-	formattedOutput, hasChange, err := reviser.Execute(projectName, filePath, options...)
+	formattedOutput, hasChange, err := reviser.Execute(projectName, filePath, localPkgPrefixes, options...)
 	if err != nil {
 		log.Fatalf("%+v", errors.WithStack(err))
 	}
@@ -156,7 +164,7 @@ func validateInputs(projectName, filePath string) error {
 
 func cleanExtraGroups(extraGroupsString string) []string {
 	groups := strings.Split(extraGroupsString, ",")
-	for i, _ := range groups {
+	for i := range groups {
 		groups[i] = strings.TrimSpace(groups[i])
 	}
 	return groups

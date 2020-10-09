@@ -13,6 +13,7 @@ func TestExecute(t *testing.T) {
 		filePath    string
 		fileContent string
 	}
+
 	tests := []struct {
 		name       string
 		args       args
@@ -342,7 +343,7 @@ import (
 		}
 
 		t.Run(tt.name, func(t *testing.T) {
-			got, hasChange, err := Execute(tt.args.projectName, tt.args.filePath)
+			got, hasChange, err := Execute(tt.args.projectName, tt.args.filePath, "")
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Execute() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -360,6 +361,7 @@ func TestExecute_WithRemoveUnusedImports(t *testing.T) {
 		filePath    string
 		fileContent string
 	}
+
 	tests := []struct {
 		name       string
 		args       args
@@ -376,7 +378,7 @@ func TestExecute_WithRemoveUnusedImports(t *testing.T) {
 
 import (
 	"fmt" //fmt package
-	"github.com/incu6us/goimports-reviser/testdata/innderpkg" //custom package
+	"github.com/pkg/errors" //custom package
 )
 
 // nolint:gomnd
@@ -409,7 +411,7 @@ func main() {
 
 import (
 	"fmt" //fmt package
-	p "github.com/incu6us/goimports-reviser/testdata/innderpkg" //p package
+	p "github.com/pkg/errors" //p package
 )
 
 // nolint:gomnd
@@ -442,7 +444,7 @@ func main() {
 
 import (
 	"fmt" //fmt package
-	_ "github.com/incu6us/goimports-reviser/testdata/innderpkg" //custom package
+	_ "github.com/pkg/errors" //custom package
 )
 
 // nolint:gomnd
@@ -456,7 +458,7 @@ func main(){
 import (
 	"fmt" // fmt package
 
-	_ "github.com/incu6us/goimports-reviser/testdata/innderpkg" // custom package
+	_ "github.com/pkg/errors" // custom package
 )
 
 // nolint:gomnd
@@ -478,7 +480,7 @@ package testdata
 // test
 import (
 	"fmt" //fmt package
-	_ "github.com/incu6us/goimports-reviser/testdata/innderpkg" //custom package
+	_ "github.com/pkg/errors" //custom package
 )
 
 // nolint:gomnd
@@ -494,7 +496,7 @@ package testdata
 import (
 	"fmt" // fmt package
 
-	_ "github.com/incu6us/goimports-reviser/testdata/innderpkg" // custom package
+	_ "github.com/pkg/errors" // custom package
 )
 
 // nolint:gomnd
@@ -558,7 +560,7 @@ const webDirectory = "web"
 		}
 
 		t.Run(tt.name, func(t *testing.T) {
-			got, hasChange, err := Execute(tt.args.projectName, tt.args.filePath, WithRemoveUnusedImports(true))
+			got, hasChange, err := Execute(tt.args.projectName, tt.args.filePath, "", OptionRemoveUnusedImports)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Execute() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -659,7 +661,7 @@ func main() {
 		}
 
 		t.Run(tt.name, func(t *testing.T) {
-			got, hasChange, err := Execute(tt.args.projectName, tt.args.filePath, WithAliasForVersionSuffix(true))
+			got, hasChange, err := Execute(tt.args.projectName, tt.args.filePath, "", OptionUseAliasForVersionSuffix)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Execute() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -671,12 +673,14 @@ func main() {
 	}
 }
 
-func TestExtraGroupImportsOrdering(t *testing.T) {
+func TestExecute_WithLocalPackagePrefixes(t *testing.T) {
 	type args struct {
-		projectName string
-		filePath    string
-		fileContent string
+		projectName      string
+		filePath         string
+		fileContent      string
+		localPkgPrefixes string
 	}
+
 	tests := []struct {
 		name       string
 		args       args
@@ -685,42 +689,82 @@ func TestExtraGroupImportsOrdering(t *testing.T) {
 		wantErr    bool
 	}{
 		{
-			name: "success with set alias",
+			name: "group local packages",
 			args: args{
-				projectName: "github.com/incu6us/goimports-reviser",
-				filePath:    "./testdata/example.go",
-				fileContent: `package main
-import(
-	"fmt"
-	"github.com/go-pg/pg/v9"
-	"strconv"
-	"github.com/incu6us/goimports-reviser/pkg"
-	"github.com/othergroup/an-import"
-	"github.com/othergroup/another-import"
-)
-
-func main(){
-	_ = strconv.Itoa(1)
-	fmt.Println(pg.In([]string{"test"}))
-}`,
-			},
-			want: `package main
+				projectName:      "github.com/incu6us/goimports-reviser",
+				localPkgPrefixes: "goimports-reviser",
+				filePath:         "./testdata/example.go",
+				fileContent: `package testdata
 
 import (
-	"fmt"
-	"strconv"
+	"fmt" //fmt package
+	"github.com/pkg/errors" //custom package
+	"github.com/incu6us/goimports-reviser/pkg"
+	"goimports-reviser/pkg"
+)
 
-	"github.com/go-pg/pg/v9"
+// nolint:gomnd
+func main(){
+  _ = fmt.Println("test")
+}
+`,
+			},
+			want: `package testdata
 
-	"github.com/othergroup/an-import"
-	"github.com/othergroup/another-import"
+import (
+	"fmt" // fmt package
+
+	"github.com/pkg/errors" // custom package
+
+	"goimports-reviser/pkg"
 
 	"github.com/incu6us/goimports-reviser/pkg"
 )
 
+// nolint:gomnd
 func main() {
-	_ = strconv.Itoa(1)
-	fmt.Println(pg.In([]string{"test"}))
+	_ = fmt.Println("test")
+}
+`,
+			wantChange: true,
+			wantErr:    false,
+		},
+		{
+			name: "group local packages",
+			args: args{
+				projectName:      "goimports-reviser",
+				localPkgPrefixes: "github.com/incu6us/goimports-reviser",
+				filePath:         "./testdata/example.go",
+				fileContent: `package testdata
+
+import (
+	"fmt" //fmt package
+	"github.com/pkg/errors" //custom package
+	"github.com/incu6us/goimports-reviser/pkg"
+	"goimports-reviser/pkg"
+)
+
+// nolint:gomnd
+func main(){
+  _ = fmt.Println("test")
+}
+`,
+			},
+			want: `package testdata
+
+import (
+	"fmt" // fmt package
+
+	"github.com/pkg/errors" // custom package
+
+	"github.com/incu6us/goimports-reviser/pkg"
+
+	"goimports-reviser/pkg"
+)
+
+// nolint:gomnd
+func main() {
+	_ = fmt.Println("test")
 }
 `,
 			wantChange: true,
@@ -734,7 +778,7 @@ func main() {
 		}
 
 		t.Run(tt.name, func(t *testing.T) {
-			got, hasChange, err := Execute(tt.args.projectName, tt.args.filePath, WithExtraImportGroups([]string{"github.com/othergroup"}))
+			got, hasChange, err := Execute(tt.args.projectName, tt.args.filePath, tt.args.localPkgPrefixes)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Execute() error = %v, wantErr %v", err, tt.wantErr)
 				return
