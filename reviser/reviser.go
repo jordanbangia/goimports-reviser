@@ -106,7 +106,6 @@ func groupImports(
 		projectLocalPkgs []string
 		generalImports   []string
 	)
-	extraGroupImports := map[string][]string{}
 
 	localPackagePrefixes := commaValueToSlice(localPkgPrefixes)
 
@@ -136,18 +135,6 @@ func groupImports(
 			continue
 		}
 
-		if set := func() bool {
-			for _, group := range options.ExtraImportGroups {
-				if strings.Contains(pkgWithoutAlias, group) {
-					extraGroupImports[group] = append(extraGroupImports[group], imprt)
-					return true
-				}
-			}
-			return false
-		}(); set {
-			continue
-		}
-
 		generalImports = append(generalImports, imprt)
 	}
 
@@ -155,19 +142,6 @@ func groupImports(
 	sort.Strings(generalImports)
 	sort.Strings(projectLocalPkgs)
 	sort.Strings(projectImports)
-	for _, group := range extraGroupImports {
-		sort.Strings(group)
-	}
-
-	importGroups := [][]string{}
-	importGroups = append(importGroups, stdImports)
-	importGroups = append(importGroups, generalImports)
-	for _, group := range options.ExtraImportGroups {
-		if len(extraGroupImports[group]) != 0 {
-			importGroups = append(importGroups, extraGroupImports[group])
-		}
-	}
-	importGroups = append(importGroups, projectImports)
 
 	return stdImports, generalImports, projectLocalPkgs, projectImports
 }
@@ -274,17 +248,17 @@ func fixImports(
 					if linesCounter == 0 && len(projectImports) > 0 {
 						spec = &ast.ImportSpec{Path: &ast.BasicLit{Value: "", Kind: token.STRING}}
 
-					linesCounter := len(group)
-					for _, imprt := range group {
-						spec := &ast.ImportSpec{
-							Path: &ast.BasicLit{Value: importWithComment(imprt, commentsMetadata), Kind: dd.Tok},
-						}
 						specs = append(specs, spec)
-
-						linesCounter--
 					}
-					first = false
 				}
+
+				for _, projectImport := range projectImports {
+					spec := &ast.ImportSpec{
+						Path: &ast.BasicLit{Value: importWithComment(projectImport, commentsMetadata), Kind: dd.Tok},
+					}
+					specs = append(specs, spec)
+				}
+
 				dd.Specs = specs
 			}
 		}

@@ -101,14 +101,6 @@ func printVersion() {
 
 func main() {
 	flag.Parse()
-	paths := flag.Args()
-	fmt.Println(paths)
-	f, err := os.Stat(paths[0])
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	fmt.Println(f.IsDir())
 
 	if shouldShowVersion != nil && *shouldShowVersion {
 		printVersion()
@@ -121,13 +113,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	options := []reviser.Option{}
+	var options reviser.Options
 	if shouldRemoveUnusedImports != nil && *shouldRemoveUnusedImports {
-		options = append(options, reviser.WithRemoveUnusedImports(true))
+		options = append(options, reviser.OptionRemoveUnusedImports)
 	}
 
 	if shouldSetAlias != nil && *shouldSetAlias {
-		options = append(options, reviser.WithAliasForVersionSuffix(true))
+		options = append(options, reviser.OptionUseAliasForVersionSuffix)
 	}
 
 	formattedOutput, hasChange, err := reviser.Execute(projectName, filePath, localPkgPrefixes, options...)
@@ -160,12 +152,4 @@ func validateInputs(projectName, filePath string) error {
 	}
 
 	return nil
-}
-
-func cleanExtraGroups(extraGroupsString string) []string {
-	groups := strings.Split(extraGroupsString, ",")
-	for i := range groups {
-		groups[i] = strings.TrimSpace(groups[i])
-	}
-	return groups
 }
