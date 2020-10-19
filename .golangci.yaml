@@ -1,0 +1,18 @@
+# https://github.com/golangci/golangci-lint/blob/master/.golangci.example.yml
+
+run:
+  skip-files:
+
+linters:
+  enable-all: true
+  disable:
+    - gci
+    - wsl
+    - nlreturn
+
+linters-settings:
+  lll:
+    line-length: 180
+  funlen:
+    lines: 100
+    statements: 80
