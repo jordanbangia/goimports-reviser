@@ -1,4 +1,13 @@
-# goimports-reviser
+# goimports-reviser [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=Right%20golang%20imports%20sorting%20and%20code%20formatting%20tool%20(goimports%20alternative)&url=https://github.com/incu6us/goimports-reviser&hashtags=golang,code,goimports-reviser,goimports,gofmt,developers)
+!['Status Badge'](https://github.com/incu6us/goimports-reviser/workflows/build/badge.svg)
+!['Release Badge'](https://github.com/incu6us/goimports-reviser/workflows/release/badge.svg)
+!['Quality Badge'](https://goreportcard.com/badge/github.com/incu6us/goimports-reviser)
+[![codecov](https://codecov.io/gh/incu6us/goimports-reviser/branch/master/graph/badge.svg)](https://codecov.io/gh/incu6us/goimports-reviser)
+![GitHub All Releases](https://img.shields.io/github/downloads/incu6us/goimports-reviser/total?color=green)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/incu6us/goimports-reviser?color=green)
+[![goimports-reviser](https://snapcraft.io//goimports-reviser/badge.svg)](https://snapcraft.io/goimports-reviser)
+![license](https://img.shields.io/github/license/incu6us/goimports-reviser)
+[![Mentioned in Awesome Go](https://awesome.re/mentioned-badge.svg)](https://github.com/avelino/awesome-go) 
 
 
 !['logo'](./images/reviser-muscot_200.png)
@@ -12,8 +21,15 @@ Use additional options `-rm-unused` to remove unused imports and `-set-alias` to
 *The last two options (`-rm-unused` & `-set-alias`) will work only for projects using Go Modules.*
 
 ## Install
+### With Brew
 ```bash
-go get github.com/jordanbangia/goimports-reviser
+brew tap incu6us/homebrew-tap
+brew install incu6us/homebrew-tap/goimports-reviser
+```
+
+### With Snap
+```bash
+snap install goimports-reviser
 ```
 
 ## How To Use
@@ -26,7 +42,7 @@ package testdata
 import (
 	"log"
 
-	"github.com/jordanbangia/goimports-reviser/testdata/innderpkg"
+	"github.com/incu6us/goimports-reviser/testdata/innderpkg"
 
 	"bytes"
 
@@ -44,7 +60,7 @@ import (
 	
 	"github.com/pkg/errors"
 	
-	"github.com/jordanbangia/goimports-reviser/testdata/innderpkg"
+	"github.com/incu6us/goimports-reviser/testdata/innderpkg"
 )
 ```
 
@@ -66,7 +82,7 @@ package testdata // goimports-reviser/testdata
 import (
 	"fmt" //fmt package
 	"github.com/pkg/errors" //custom package
-	"github.com/jordanbangia/goimports-reviser/pkg" // this is a local package which is not a part of the project
+	"github.com/incu6us/goimports-reviser/pkg" // this is a local package which is not a part of the project
 	"goimports-reviser/pkg"
 )
 ```
@@ -80,7 +96,7 @@ import (
 
 	"github.com/pkg/errors" // custom package
 
-	"github.com/jordanbangia/goimports-reviser/pkg" // this is a local package which is not a part of the project
+	"github.com/incu6us/goimports-reviser/pkg" // this is a local package which is not a part of the project
 
 	"goimports-reviser/pkg"
 )
@@ -92,7 +108,7 @@ Usage of goimports-reviser:
   -file-path string
         File path to fix imports(ex.: ./reviser/reviser.go). Required parameter.
   -project-name string
-        Your project name(ex.: github.com/jordanbangia/goimports-reviser). Required parameter.
+        Your project name(ex.: github.com/incu6us/goimports-reviser). Required parameter.
   -local string
         Local package prefixes which will be placed after 3rd-party group(if defined). Values should be comma-separated. Optional parameters.
   -rm-unused
@@ -104,7 +120,7 @@ Usage of goimports-reviser:
 ## Examples:
 ### Cmd
 ```bash
-goimports-reviser -project-name github.com/jordanbangia/goimports-reviser -file-path ./reviser/reviser.go -rm-unused -set-alias
+goimports-reviser -project-name github.com/incu6us/goimports-reviser -file-path ./reviser/reviser.go -rm-unused -set-alias
 ```
 
 ### Example, to configure it with JetBrains IDEs (via file watcher plugin):
