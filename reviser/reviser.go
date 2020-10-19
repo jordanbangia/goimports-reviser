@@ -21,42 +21,10 @@ const (
 	stringValueSeparator = ","
 )
 
-// Option is an int alias for options
-type Option int
-
-const (
-	// OptionRemoveUnusedImports is an option to remove unused imports
-	OptionRemoveUnusedImports Option = iota + 1
-
-	// OptionUseAliasForVersionSuffix is an option to set explicit package name in imports
-	OptionUseAliasForVersionSuffix
-)
-
-// Options is a slice of executing options
-type Options []Option
-
-func (o Options) shouldRemoveUnusedImports() bool {
-	for _, option := range o {
-		if option == OptionRemoveUnusedImports {
-			return true
-		}
-	}
-
-	return false
-}
-
-func (o Options) shouldUseAliasForVersionSuffix() bool {
-	for _, option := range o {
-		if option == OptionUseAliasForVersionSuffix {
-			return true
-		}
-	}
-
-	return false
-}
-
 // Execute is for revise imports and format the code
-func Execute(projectName, filePath, localPkgPrefixes string, options ...Option) ([]byte, bool, error) {
+func Execute(projectName, filePath, localPkgPrefixes string, os ...Option) ([]byte, bool, error) {
+	options := apply(os)
+
 	originalContent, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		return nil, false, err
@@ -296,11 +264,11 @@ func importWithComment(imprt string, commentsMetadata map[string]*commentsMetada
 	return fmt.Sprintf("%s %s", imprt, comment)
 }
 
-func parseImports(f *ast.File, filePath string, options Options) (map[string]*commentsMetadata, error) {
+func parseImports(f *ast.File, filePath string, options *options) (map[string]*commentsMetadata, error) {
 	importsWithMetadata := map[string]*commentsMetadata{}
 
-	shouldRemoveUnusedImports := options.shouldRemoveUnusedImports()
-	shouldUseAliasForVersionSuffix := options.shouldUseAliasForVersionSuffix()
+	shouldRemoveUnusedImports := options.RemoveUnusedImports
+	shouldUseAliasForVersionSuffix := options.UseAliasForVersionSuffix
 
 	var packageImports map[string]string
 	var err error

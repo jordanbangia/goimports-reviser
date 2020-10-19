@@ -560,7 +560,7 @@ const webDirectory = "web"
 		}
 
 		t.Run(tt.name, func(t *testing.T) {
-			got, hasChange, err := Execute(tt.args.projectName, tt.args.filePath, "", OptionRemoveUnusedImports)
+			got, hasChange, err := Execute(tt.args.projectName, tt.args.filePath, "", WithRemoveUnusedImports(true))
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Execute() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -661,7 +661,7 @@ func main() {
 		}
 
 		t.Run(tt.name, func(t *testing.T) {
-			got, hasChange, err := Execute(tt.args.projectName, tt.args.filePath, "", OptionUseAliasForVersionSuffix)
+			got, hasChange, err := Execute(tt.args.projectName, tt.args.filePath, "", WithUseAlias(true))
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Execute() error = %v, wantErr %v", err, tt.wantErr)
 				return
