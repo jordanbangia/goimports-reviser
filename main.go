@@ -10,6 +10,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/incu6us/goimports-reviser/v2/pkg/module"
 	"github.com/incu6us/goimports-reviser/v2/reviser"
 )
 
@@ -26,7 +27,7 @@ const (
 	filePathArg            = "file-path"
 	versionArg             = "version"
 	removeUnusedImportsArg = "rm-unused"
-	setAlias               = "set-alias"
+	setAliasArg            = "set-alias"
 	localPkgPrefixesArg    = "local"
 )
 
@@ -65,6 +66,16 @@ func main() {
 
 	if *projectName == "" {
 		fmt.Fprintf(os.Stderr, fmt.Sprintf("-%s should be set", projectNameArg))
+	if err := validateRequiredParam(filePath); err != nil {
+		fmt.Printf("%s\n\n", err)
+		printUsage()
+		os.Exit(1)
+	}
+
+	projectName, err := determineProjectName(projectName, filePath)
+	if err != nil {
+		fmt.Printf("%s\n\n", err)
+		printUsage()
 		os.Exit(1)
 	}
 
@@ -92,4 +103,30 @@ func main() {
 	if err := ioutil.WriteFile(filePath, formattedOutput, 0644); err != nil {
 		log.Fatalf("failed to write fixed result to file(%s): %+v", filePath, errors.WithStack(err))
 	}
+}
+
+func determineProjectName(projectName, filePath string) (string, error) {
+	if projectName == "" {
+		projectRootPath, err := module.GoModRootPath(filePath)
+		if err != nil {
+			return "", err
+		}
+
+		moduleName, err := module.Name(projectRootPath)
+		if err != nil {
+			return "", err
+		}
+
+		return moduleName, nil
+	}
+
+	return projectName, nil
+}
+
+func validateRequiredParam(filePath string) error {
+	if filePath == "" {
+		return errors.Errorf("-%s should be set", filePathArg)
+	}
+
+	return nil
 }
